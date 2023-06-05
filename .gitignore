@@ -1,0 +1,15 @@
+# https://help.github.com/articles/ignoring-files/
+
+# Gradle
+/.gradle/
+/build/
+
+# JetBrains IntelliJ IDEA
+/.idea/
+/*.iml
+
+# macOS
+.DS_Store
+
+# Visual Studio Code
+/*.code-workspace
