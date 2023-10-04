@@ -15,6 +15,9 @@
  */
 package com.sasorio.event;
 
+import org.jspecify.annotations.NullMarked;
+
+@NullMarked
 record EventConfigImpl(
   int order,
   boolean acceptsCancelled,

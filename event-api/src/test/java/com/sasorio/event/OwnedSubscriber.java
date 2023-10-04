@@ -17,8 +17,9 @@ package com.sasorio.event;
 
 import java.util.UUID;
 import java.util.function.Predicate;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public class OwnedSubscriber<E> implements EventSubscriber<E> {
   public static <E> Predicate<EventSubscription<? super E>> unsubscribeOwner(final UUID owner) {
     return subscription -> {
@@ -36,7 +37,7 @@ public class OwnedSubscriber<E> implements EventSubscriber<E> {
   }
 
   @Override
-  public void on(final @NotNull E event) throws Throwable {
+  public void on(final E event) throws Throwable {
     this.body.on(event);
   }
 }

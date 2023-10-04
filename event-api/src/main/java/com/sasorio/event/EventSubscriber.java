@@ -15,6 +15,8 @@
  */
 package com.sasorio.event;
 
+import org.jspecify.annotations.NullMarked;
+
 /**
  * A functional interface representing an object that can handle a given type of event.
  *
@@ -22,5 +24,6 @@ package com.sasorio.event;
  * @since 1.0.0
  */
 @FunctionalInterface
+@NullMarked
 public interface EventSubscriber<E> extends EventConsumer<E> {
 }

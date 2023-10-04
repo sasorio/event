@@ -16,10 +16,11 @@
 package com.sasorio.event;
 
 import com.sasorio.event.bus.EventBus;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
+@NullMarked
 public final class TestFailingEventExceptionHandler implements EventBus.EventExceptionHandler {
   public static final TestFailingEventExceptionHandler INSTANCE = new TestFailingEventExceptionHandler();
 
@@ -27,7 +28,7 @@ public final class TestFailingEventExceptionHandler implements EventBus.EventExc
   }
 
   @Override
-  public <E> void eventExceptionCaught(final @NotNull EventSubscription<? super E> subscription, final @NotNull E event, final @NotNull Throwable throwable) {
+  public <E> void eventExceptionCaught(final EventSubscription<? super E> subscription, final E event, final Throwable throwable) {
     fail(subscription + " failed", throwable);
   }
 }

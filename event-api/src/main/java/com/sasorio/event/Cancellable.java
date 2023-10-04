@@ -15,11 +15,14 @@
  */
 package com.sasorio.event;
 
+import org.jspecify.annotations.NullMarked;
+
 /**
  * Something that can be cancelled.
  *
  * @since 1.0.0
  */
+@NullMarked
 public interface Cancellable {
   /**
    * Gets the cancelled state.

@@ -20,12 +20,14 @@ import com.sasorio.event.bus.SimpleEventBus;
 import com.sasorio.event.registry.EventRegistry;
 import com.sasorio.event.registry.SimpleEventRegistry;
 import java.util.UUID;
+import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@NullMarked
 class EventTest {
   private final EventRegistry<Object> registry = new SimpleEventRegistry<>(Object.class);
   private final EventBus<Object> bus = new SimpleEventBus<>(this.registry, TestFailingEventExceptionHandler.INSTANCE);

@@ -15,13 +15,14 @@
  */
 package com.sasorio.event;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Event configuration.
  *
  * @since 1.0.0
  */
+@NullMarked
 public interface EventConfig {
   /**
    * The default value for {@link #order()}.
@@ -48,7 +49,7 @@ public interface EventConfig {
    * @return the default configuration
    * @since 1.0.0
    */
-  static @NotNull EventConfig defaults() {
+  static EventConfig defaults() {
     return EventConfigImpl.DEFAULTS;
   }
 
@@ -69,7 +70,7 @@ public interface EventConfig {
    * @return an {@link EventConfig}
    * @since 1.0.0
    */
-  default @NotNull EventConfig order(final int order) {
+  default EventConfig order(final int order) {
     return new EventConfigImpl(order, this.acceptsCancelled(), this.exact());
   }
 
@@ -90,7 +91,7 @@ public interface EventConfig {
    * @return an {@link EventConfig}
    * @since 1.0.0
    */
-  default @NotNull EventConfig acceptsCancelled(final boolean acceptsCancelled) {
+  default EventConfig acceptsCancelled(final boolean acceptsCancelled) {
     return new EventConfigImpl(this.order(), acceptsCancelled, this.exact());
   }
 
@@ -111,7 +112,7 @@ public interface EventConfig {
    * @return an {@link EventConfig}
    * @since 1.0.0
    */
-  default @NotNull EventConfig exact(final boolean exact) {
+  default EventConfig exact(final boolean exact) {
     return new EventConfigImpl(this.order(), this.acceptsCancelled(), exact);
   }
 }

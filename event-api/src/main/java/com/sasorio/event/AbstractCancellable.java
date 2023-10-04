@@ -15,11 +15,14 @@
  */
 package com.sasorio.event;
 
+import org.jspecify.annotations.NullMarked;
+
 /**
  * An abstract implementation of something that can be cancelled.
  *
  * @since 1.0.0
  */
+@NullMarked
 public abstract class AbstractCancellable implements Cancellable {
   protected boolean cancelled;
 

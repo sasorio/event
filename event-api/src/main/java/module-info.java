@@ -15,6 +15,7 @@
  */
 module com.sasorio.event {
   requires static transitive org.jetbrains.annotations;
+  requires static transitive org.jspecify;
 
   exports com.sasorio.event;
   exports com.sasorio.event.bus;

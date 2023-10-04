@@ -15,5 +15,8 @@
  */
 package com.sasorio.event;
 
+import org.jspecify.annotations.NullMarked;
+
+@NullMarked
 public class TestEvent2 extends TestEvent1 {
 }
