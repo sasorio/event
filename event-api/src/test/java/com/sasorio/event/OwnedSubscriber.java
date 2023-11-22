@@ -20,20 +20,15 @@ import java.util.function.Predicate;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class OwnedSubscriber<E> implements EventSubscriber<E> {
+public record OwnedSubscriber<E>(
+  UUID owner,
+  EventSubscriber<E> body
+) implements EventSubscriber<E> {
   public static <E> Predicate<EventSubscription<? super E>> unsubscribeOwner(final UUID owner) {
     return subscription -> {
       final EventSubscriber<? super E> subscriber = subscription.subscriber();
       return subscriber instanceof OwnedSubscriber<?> && ((OwnedSubscriber<?>) subscriber).owner.equals(owner);
     };
-  }
-
-  public final UUID owner;
-  public final EventSubscriber<E> body;
-
-  public OwnedSubscriber(final UUID owner, final EventSubscriber<E> body) {
-    this.owner = owner;
-    this.body = body;
   }
 
   @Override
