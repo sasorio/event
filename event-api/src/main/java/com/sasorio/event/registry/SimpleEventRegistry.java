@@ -23,9 +23,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringJoiner;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 import org.jspecify.annotations.NullMarked;
 
@@ -46,7 +49,7 @@ public class SimpleEventRegistry<E> implements EventRegistry<E> {
   private final Map<Class<? extends E>, List<EventSubscription<? super E>>> unbaked = new HashMap<>();
   private final Map<Class<? extends E>, List<EventSubscription<? super E>>> baked = new HashMap<>();
 
-  private final Object lock = new Object();
+  private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
   private final Class<E> type;
 
@@ -71,31 +74,51 @@ public class SimpleEventRegistry<E> implements EventRegistry<E> {
     requireNonNull(config, "config");
     requireNonNull(subscriber, "subscriber");
     final EventSubscription<T> subscription = new EventSubscriptionImpl<>(event, config, subscriber);
-    synchronized (this.lock) {
+    this.lock.writeLock().lock();
+    try {
       final List<EventSubscription<? super T>> subscriptions = yayGenerics(this.unbaked.computeIfAbsent(event, key -> new ArrayList<>()));
       subscriptions.add(subscription);
-      this.baked.clear();
+      this.invalidateBakedFor(Set.of(event));
+    } finally {
+      this.lock.writeLock().unlock();
     }
     return subscription;
   }
 
   @Override
   public void unsubscribeIf(final Predicate<EventSubscription<? super E>> predicate) {
-    synchronized (this.lock) {
-      boolean removedAny = false;
-      for (final List<EventSubscription<? super E>> subscriptions : this.unbaked.values()) {
-        removedAny |= subscriptions.removeIf(predicate);
+    this.lock.writeLock().lock();
+    try {
+      final Set<Class<? extends E>> changedEvents = new HashSet<>();
+      for (final Map.Entry<Class<? extends E>, List<EventSubscription<? super E>>> entry : this.unbaked.entrySet()) {
+        if (entry.getValue().removeIf(predicate)) {
+          changedEvents.add(entry.getKey());
+        }
       }
-      if (removedAny) {
-        this.baked.clear();
+      if (!changedEvents.isEmpty()) {
+        this.invalidateBakedFor(changedEvents);
       }
+    } finally {
+      this.lock.writeLock().unlock();
     }
   }
 
   @Override
   public List<EventSubscription<? super E>> subscriptions(final Class<? extends E> event) {
-    synchronized (this.lock) {
+    this.lock.readLock().lock();
+    try {
+      final List<EventSubscription<? super E>> cached = this.baked.get(event);
+      if (cached != null) {
+        return cached;
+      }
+    } finally {
+      this.lock.readLock().unlock();
+    }
+    this.lock.writeLock().lock();
+    try {
       return this.baked.computeIfAbsent(event, this::computeSubscriptions);
+    } finally {
+      this.lock.writeLock().unlock();
     }
   }
 
@@ -113,6 +136,21 @@ public class SimpleEventRegistry<E> implements EventRegistry<E> {
     final Collection<? extends Class<?>> classes = Internals.ancestors(type);
     classes.removeIf(klass -> !this.type.isAssignableFrom(klass));
     return classes;
+  }
+
+  private void invalidateBakedFor(final Collection<Class<? extends E>> changedEvents) {
+    if (this.baked.isEmpty()) {
+      return;
+    }
+    this.baked.entrySet().removeIf(entry -> {
+      final Class<? extends E> bakedEvent = entry.getKey();
+      for (final Class<? extends E> changed : changedEvents) {
+        if (changed.isAssignableFrom(bakedEvent)) {
+          return true;
+        }
+      }
+      return false;
+    });
   }
 
   @SuppressWarnings("unchecked")
@@ -149,12 +187,15 @@ public class SimpleEventRegistry<E> implements EventRegistry<E> {
 
     @Override
     public void dispose() {
-      synchronized (SimpleEventRegistry.this.lock) {
+      SimpleEventRegistry.this.lock.writeLock().lock();
+      try {
         final List<EventSubscription<? super T>> subscriptions = yayGenerics(SimpleEventRegistry.this.unbaked.get(this.event));
         if (subscriptions != null) {
           subscriptions.remove(this);
-          SimpleEventRegistry.this.baked.clear();
+          SimpleEventRegistry.this.invalidateBakedFor(Set.of(this.event));
         }
+      } finally {
+        SimpleEventRegistry.this.lock.writeLock().unlock();
       }
     }
 
