@@ -37,7 +37,7 @@ spotless {
   java {
     endWithNewline()
     importOrderFile(rootProject.file(".spotless/sasorio.importorder"))
-    indentWithSpaces(2)
+    leadingTabsToSpaces(2)
     licenseHeaderFile(rootProject.file("license_header.txt"))
     trimTrailingWhitespace()
   }
@@ -55,8 +55,7 @@ repositories {
 
 dependencies {
   annotationProcessor("ca.stellardrift:contract-validator:1.0.1")
-  checkstyle("ca.stellardrift:stylecheck:0.2.1")
-  testImplementation(platform("org.junit:junit-bom:5.10.0"))
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform("org.junit:junit-bom:6.0.2"))
+  testImplementation("org.junit.jupiter:junit-jupiter")
+  testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

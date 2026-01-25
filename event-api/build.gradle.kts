@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-  compileOnlyApi("org.jetbrains:annotations:24.0.1")
-  compileOnlyApi("org.jspecify:jspecify:0.3.0")
-  testImplementation("com.google.guava:guava-testlib:32.1.3-jre")
+  compileOnlyApi("org.jetbrains:annotations:26.0.2-1")
+  compileOnlyApi("org.jspecify:jspecify:1.0.0")
+  testImplementation("com.google.guava:guava-testlib:33.5.0-jre")
 }
