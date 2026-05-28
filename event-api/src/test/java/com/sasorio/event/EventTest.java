@@ -30,7 +30,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @NullMarked
 class EventTest {
   private final EventRegistry<Object> registry = new SimpleEventRegistry<>(Object.class);
-  private final EventBus<Object> bus = new SimpleEventBus<>(this.registry, TestFailingEventExceptionHandler.INSTANCE);
+  private final EventBus<Object> bus = new SimpleEventBus<>(
+    this.registry,
+    TestFailingEventExceptionHandler.INSTANCE
+  );
 
   @Test
   void testSubscribePostUnsubscribePost() {

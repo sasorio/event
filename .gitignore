@@ -3,6 +3,7 @@
 # Gradle
 /.gradle/
 /build/
+/build-logic/.kotlin/
 
 # JetBrains IntelliJ IDEA
 /.idea/

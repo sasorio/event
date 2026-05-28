@@ -44,13 +44,19 @@ public class SimpleEventBus<E> implements EventBus<E> {
    * @param exceptions the event exception handler
    * @since 1.0.0
    */
-  public SimpleEventBus(final EventRegistry<E> registry, final EventBus.EventExceptionHandler exceptions) {
+  public SimpleEventBus(
+    final EventRegistry<E> registry,
+    final EventExceptionHandler exceptions
+  ) {
     this.registry = requireNonNull(registry, "registry");
     this.exceptions = requireNonNull(exceptions, "exceptions");
   }
 
   @Override
-  public void post(final E event, final OptionalInt order) {
+  public void post(
+    final E event,
+    final OptionalInt order
+  ) {
     @SuppressWarnings("unchecked")
     final Class<? extends E> type = (Class<? extends E>) event.getClass();
     final List<EventSubscription<? super E>> subscriptions = this.registry.subscriptions(type);

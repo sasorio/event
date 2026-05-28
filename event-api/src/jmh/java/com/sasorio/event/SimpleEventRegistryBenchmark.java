@@ -40,6 +40,7 @@ import org.openjdk.jmh.infra.Blackhole;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
 public class SimpleEventRegistryBenchmark {
+  @NullMarked
   @State(Scope.Thread)
   public static class CachedReadState {
     SimpleEventRegistry<BaseEvent> registry;
@@ -52,6 +53,7 @@ public class SimpleEventRegistryBenchmark {
     }
   }
 
+  @NullMarked
   @State(Scope.Thread)
   public static class WriteThenReadState {
     SimpleEventRegistry<BaseEvent> registry;
@@ -65,6 +67,7 @@ public class SimpleEventRegistryBenchmark {
     }
   }
 
+  @NullMarked
   @State(Scope.Thread)
   public static class ColdState {
     SimpleEventRegistry<BaseEvent> registry;
@@ -76,6 +79,7 @@ public class SimpleEventRegistryBenchmark {
     }
   }
 
+  @NullMarked
   @State(Scope.Benchmark)
   public static class ContendedState {
     @Param({"32", "256"})
@@ -110,9 +114,9 @@ public class SimpleEventRegistryBenchmark {
     blackhole.consume(state.registry.subscriptions(EventC.class).size());
   }
 
+  @Benchmark
   @Group("contendedReadMostly")
   @GroupThreads(6)
-  @Benchmark
   public void contendedReadMostly_read(final ContendedState state, final Blackhole blackhole) {
     blackhole.consume(state.registry.subscriptions(EventA.class).size());
   }

@@ -45,7 +45,10 @@ public interface EventBus<E> {
    * @since 1.0.0
    */
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-  void post(final E event, final OptionalInt order);
+  void post(
+    final E event,
+    final OptionalInt order
+  );
 
   /**
    * An event exception handler.
@@ -65,6 +68,11 @@ public interface EventBus<E> {
      * @param <E> the event type
      * @since 1.0.0
      */
-    <E> void eventExceptionCaught(final EventBus<? super E> bus, final EventSubscription<? super E> subscription, final E event, final Throwable throwable);
+    <E> void eventExceptionCaught(
+      final EventBus<? super E> bus,
+      final EventSubscription<? super E> subscription,
+      final E event,
+      final Throwable throwable
+    );
   }
 }

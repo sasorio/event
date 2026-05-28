@@ -28,7 +28,12 @@ public final class TestFailingEventExceptionHandler implements EventBus.EventExc
   }
 
   @Override
-  public <E> void eventExceptionCaught(final EventBus<? super E> bus, final EventSubscription<? super E> subscription, final E event, final Throwable throwable) {
+  public <E> void eventExceptionCaught(
+    final EventBus<? super E> bus,
+    final EventSubscription<? super E> subscription,
+    final E event,
+    final Throwable throwable
+  ) {
     fail(subscription + " failed", throwable);
   }
 }

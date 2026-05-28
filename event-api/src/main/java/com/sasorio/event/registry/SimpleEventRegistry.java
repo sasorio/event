@@ -69,7 +69,11 @@ public class SimpleEventRegistry<E> implements EventRegistry<E> {
   }
 
   @Override
-  public <T extends E> EventSubscription<T> subscribe(final Class<T> event, final EventConfig config, final EventSubscriber<? super T> subscriber) {
+  public <T extends E> EventSubscription<T> subscribe(
+    final Class<T> event,
+    final EventConfig config,
+    final EventSubscriber<? super T> subscriber
+  ) {
     requireNonNull(event, "event");
     requireNonNull(config, "config");
     requireNonNull(subscriber, "subscriber");

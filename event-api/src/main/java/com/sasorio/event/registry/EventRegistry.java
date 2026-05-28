@@ -59,7 +59,10 @@ public interface EventRegistry<E> {
    * @param <T> the event type
    * @since 1.0.0
    */
-  default <T extends E> EventSubscription<T> subscribe(final Class<T> event, final EventSubscriber<? super T> subscriber) {
+  default <T extends E> EventSubscription<T> subscribe(
+    final Class<T> event,
+    final EventSubscriber<? super T> subscriber
+  ) {
     return this.subscribe(event, EventConfig.defaults(), subscriber);
   }
 
@@ -72,7 +75,11 @@ public interface EventRegistry<E> {
    * @param <T> the event type
    * @since 1.0.0
    */
-  <T extends E> EventSubscription<T> subscribe(final Class<T> event, final EventConfig config, final EventSubscriber<? super T> subscriber);
+  <T extends E> EventSubscription<T> subscribe(
+    final Class<T> event,
+    final EventConfig config,
+    final EventSubscriber<? super T> subscriber
+  );
 
   /**
    * Removes subscriptions matching {@code predicate}.
