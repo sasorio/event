@@ -44,13 +44,13 @@ class EventTest {
     assertTrue(this.registry.subscribed(TestEvent1.class));
 
     final TestEvent1 event = new TestEvent1();
-    this.bus.post(event);
+    this.bus.emit(event);
     assertEquals(1, event.touches);
 
     subscription.dispose();
 
     assertFalse(this.registry.subscribed(TestEvent1.class));
-    this.bus.post(event);
+    this.bus.emit(event);
     assertEquals(1, event.touches);
   }
 
@@ -66,11 +66,11 @@ class EventTest {
     assertTrue(this.registry.subscribed(TestEvent2.class));
 
     final TestEvent1 event1 = new TestEvent1();
-    this.bus.post(event1);
+    this.bus.emit(event1);
     assertEquals(1, event1.touches);
 
     final TestEvent2 event2 = new TestEvent2();
-    this.bus.post(event2);
+    this.bus.emit(event2);
     assertEquals(2, event2.touches);
   }
 
@@ -79,12 +79,12 @@ class EventTest {
     this.registry.subscribe(TestEvent1.class, EventConfig.defaults().acceptsCancelled(false), event -> event.touches++);
 
     final TestEvent1 event = new TestEvent1();
-    this.bus.post(event);
+    this.bus.emit(event);
     assertEquals(1, event.touches);
 
     event.cancelled(true);
 
-    this.bus.post(event);
+    this.bus.emit(event);
     assertEquals(1, event.touches);
   }
 
@@ -93,11 +93,11 @@ class EventTest {
     this.registry.subscribe(TestEvent1.class, EventConfig.defaults().exact(true), event -> event.touches++);
 
     final TestEvent1 event1 = new TestEvent1();
-    this.bus.post(event1);
+    this.bus.emit(event1);
     assertEquals(1, event1.touches);
 
     final TestEvent2 event2 = new TestEvent2();
-    this.bus.post(event2);
+    this.bus.emit(event2);
     assertEquals(0, event2.touches);
   }
 
@@ -123,14 +123,14 @@ class EventTest {
     assertTrue(this.registry.subscribed(TestEvent1.class));
 
     final TestEvent1 event = new TestEvent1();
-    this.bus.post(event);
+    this.bus.emit(event);
     assertEquals(2, event.touches);
 
     this.registry.unsubscribeIf(OwnedSubscriber.unsubscribeOwner(owner2));
 
     assertTrue(this.registry.subscribed(TestEvent1.class));
 
-    this.bus.post(event);
+    this.bus.emit(event);
     assertEquals(3, event.touches); // only 3, since one subscriber is gone
   }
 }

@@ -53,7 +53,7 @@ public class SimpleEventBus<E> implements EventBus<E> {
   }
 
   @Override
-  public void post(
+  public void emit(
     final E event,
     final OptionalInt order
   ) {
@@ -72,6 +72,15 @@ public class SimpleEventBus<E> implements EventBus<E> {
         }
       }
     }
+  }
+
+  @Deprecated(since = "1.1.0", forRemoval = true)
+  @Override
+  public void post(
+    final E event,
+    final OptionalInt order
+  ) {
+    this.emit(event, order);
   }
 
   @SuppressWarnings("RedundantIfStatement")
