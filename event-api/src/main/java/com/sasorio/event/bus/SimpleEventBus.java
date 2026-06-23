@@ -21,6 +21,7 @@ import com.sasorio.event.EventSubscription;
 import com.sasorio.event.registry.EventRegistry;
 import java.util.List;
 import java.util.OptionalInt;
+import java.util.function.Predicate;
 import org.jspecify.annotations.NullMarked;
 
 import static java.util.Objects.requireNonNull;
@@ -36,20 +37,40 @@ import static java.util.Objects.requireNonNull;
 public class SimpleEventBus<E> implements EventBus<E> {
   protected final EventRegistry<E> registry;
   protected final EventExceptionHandler exceptions;
+  protected final Predicate<E> cancelled;
+
+  /**
+   * Constructs a new {@code SimpleEventBus}.
+   *
+   * @deprecated use {@link #SimpleEventBus(EventRegistry, EventExceptionHandler, Predicate)}
+   * @param registry the event registry
+   * @param exceptions the event exception handler
+   * @since 1.0.0
+   */
+  @Deprecated(since = "1.1.0", forRemoval = true)
+  public SimpleEventBus(
+    final EventRegistry<E> registry,
+    final EventExceptionHandler exceptions
+  ) {
+    this(registry, exceptions, event -> event instanceof Cancellable && ((Cancellable) event).cancelled());
+  }
 
   /**
    * Constructs a new {@code SimpleEventBus}.
    *
    * @param registry the event registry
    * @param exceptions the event exception handler
-   * @since 1.0.0
+   * @param cancelled the predicate used to determine whether an event should be treated as cancelled
+   * @since 1.1.0
    */
   public SimpleEventBus(
     final EventRegistry<E> registry,
-    final EventExceptionHandler exceptions
+    final EventExceptionHandler exceptions,
+    final Predicate<E> cancelled
   ) {
     this.registry = requireNonNull(registry, "registry");
     this.exceptions = requireNonNull(exceptions, "exceptions");
+    this.cancelled = requireNonNull(cancelled, "cancelled");
   }
 
   @Override
@@ -100,21 +121,11 @@ public class SimpleEventBus<E> implements EventBus<E> {
     }
 
     if (!config.acceptsCancelled()) {
-      if (this.currentlyCancelled(event)) {
+      if (this.cancelled.test(event)) {
         return false;
       }
     }
 
     return true;
-  }
-
-  /**
-   * Checks if {@code event} is cancelled.
-   *
-   * @param event the event
-   * @return {@code true} if the event is cancelled, {@code false} otherwise
-   */
-  protected boolean currentlyCancelled(final E event) {
-    return event instanceof Cancellable && ((Cancellable) event).cancelled();
   }
 }

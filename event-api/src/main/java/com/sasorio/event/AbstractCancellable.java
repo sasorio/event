@@ -22,6 +22,7 @@ import org.jspecify.annotations.NullMarked;
  *
  * @since 1.0.0
  */
+@Deprecated(since = "1.1.0", forRemoval = true)
 @NullMarked
 public abstract class AbstractCancellable implements Cancellable {
   protected boolean cancelled;

@@ -32,7 +32,8 @@ class EventTest {
   private final EventRegistry<Object> registry = new SimpleEventRegistry<>(Object.class);
   private final EventBus<Object> bus = new SimpleEventBus<>(
     this.registry,
-    TestFailingEventExceptionHandler.INSTANCE
+    TestFailingEventExceptionHandler.INSTANCE,
+    event -> event instanceof Cancellable && ((Cancellable) event).cancelled()
   );
 
   @Test
