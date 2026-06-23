@@ -76,7 +76,7 @@ public class SimpleEventBus<E> implements EventBus<E> {
   @Override
   public void emit(
     final E event,
-    final OptionalInt order
+    final OptionalInt priority
   ) {
     @SuppressWarnings("unchecked")
     final Class<? extends E> type = (Class<? extends E>) event.getClass();
@@ -85,7 +85,7 @@ public class SimpleEventBus<E> implements EventBus<E> {
       return;
     }
     for (final EventSubscription<? super E> subscription : subscriptions) {
-      if (this.accepts(subscription, event, order)) {
+      if (this.accepts(subscription, event, priority)) {
         try {
           subscription.subscriber().on(event);
         } catch (final Throwable t) {
@@ -99,13 +99,13 @@ public class SimpleEventBus<E> implements EventBus<E> {
   @Override
   public void post(
     final E event,
-    final OptionalInt order
+    final OptionalInt priority
   ) {
-    this.emit(event, order);
+    this.emit(event, priority);
   }
 
   @SuppressWarnings("RedundantIfStatement")
-  protected boolean accepts(final EventSubscription<? super E> subscription, final E event, final OptionalInt order) {
+  protected boolean accepts(final EventSubscription<? super E> subscription, final E event, final OptionalInt priority) {
     final EventConfig config = subscription.config();
 
     if (config.exact()) {
@@ -114,8 +114,8 @@ public class SimpleEventBus<E> implements EventBus<E> {
       }
     }
 
-    if (order.isPresent()) {
-      if (config.order() != order.getAsInt()) {
+    if (priority.isPresent()) {
+      if (config.priority() != priority.getAsInt()) {
         return false;
       }
     }

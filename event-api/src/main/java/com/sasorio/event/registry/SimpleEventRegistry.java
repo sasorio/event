@@ -42,7 +42,7 @@ import static java.util.Objects.requireNonNull;
  */
 @NullMarked
 public class SimpleEventRegistry<E> implements EventRegistry<E> {
-  private static final Comparator<EventSubscription<?>> ORDER_COMPARATOR = Comparator.comparingInt(subscription -> subscription.config().order());
+  private static final Comparator<EventSubscription<?>> PRIORITY_COMPARATOR = Comparator.comparingInt(subscription -> subscription.config().priority());
 
   private final Map<Class<? extends E>, Collection<? extends Class<?>>> classes = new HashMap<>();
 
@@ -132,7 +132,7 @@ public class SimpleEventRegistry<E> implements EventRegistry<E> {
     for (final Class<?> type : types) {
       subscriptions.addAll(this.unbaked.getOrDefault(type, Collections.emptyList()));
     }
-    subscriptions.sort(ORDER_COMPARATOR);
+    subscriptions.sort(PRIORITY_COMPARATOR);
     return subscriptions;
   }
 

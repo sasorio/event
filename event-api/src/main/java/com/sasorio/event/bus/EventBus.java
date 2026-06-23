@@ -38,18 +38,18 @@ public interface EventBus<E> {
   }
 
   /**
-   * Emits an event to all registered subscribers at the order provided in {@code order}.
+   * Emits an event to all registered subscribers at the priority provided in {@code priority}.
    *
    * @param event the event
-   * @param order the order
+   * @param priority the priority
    * @since 1.1.0
    */
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   default void emit(
     final E event,
-    final OptionalInt order
+    final OptionalInt priority
   ) {
-    this.post(event, order);
+    this.post(event, priority);
   }
 
   /**
@@ -65,18 +65,18 @@ public interface EventBus<E> {
   }
 
   /**
-   * Posts an event to all registered subscribers at the order provided in {@code order}.
+   * Posts an event to all registered subscribers at the priority provided in {@code priority}.
    *
    * @deprecated use {@link #emit(Object, OptionalInt)}
    * @param event the event
-   * @param order the order
+   * @param priority the priority
    * @since 1.0.0
    */
   @Deprecated(since = "1.1.0", forRemoval = true)
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   void post(
     final E event,
-    final OptionalInt order
+    final OptionalInt priority
   );
 
   /**

@@ -26,11 +26,19 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public interface EventConfig {
   /**
+   * The default value for {@link #priority()}.
+   *
+   * @since 1.1.0
+   */
+  int DEFAULT_PRIORITY = 0;
+  /**
    * The default value for {@link #order()}.
    *
+   * @deprecated use {@link #DEFAULT_PRIORITY}
    * @since 1.0.0
    */
-  int DEFAULT_ORDER = 0;
+  @Deprecated(since = "1.1.0", forRemoval = true)
+  int DEFAULT_ORDER = DEFAULT_PRIORITY;
   /**
    * The default value for {@link #acceptsCancelled()}.
    *
@@ -58,7 +66,7 @@ public interface EventConfig {
   /**
    * Creates a new configuration.
    *
-   * @param order the post order
+   * @param priority the priority
    * @param acceptsCancelled if cancelled events are accepted
    * @param exact if only the exact event type is accepted
    * @return a configuration
@@ -66,11 +74,11 @@ public interface EventConfig {
    */
   @Contract(pure = true)
   static EventConfig of(
-    final int order,
+    final int priority,
     final boolean acceptsCancelled,
     final boolean exact
   ) {
-    return new EventConfigImpl(order, acceptsCancelled, exact);
+    return new EventConfigImpl(priority, acceptsCancelled, exact);
   }
 
   /**
@@ -85,20 +93,53 @@ public interface EventConfig {
   }
 
   /**
+   * Gets the priority.
+   *
+   * <p>Lower values run first, higher values run later. Subscribers with the same priority may be invoked in any order.</p>
+   *
+   * <p>The default priority is {@link #DEFAULT_PRIORITY} ({@code 0}).</p>
+   *
+   * @return the priority
+   * @since 1.1.0
+   */
+  default int priority() {
+    return this.order();
+  }
+
+  /**
+   * Sets the priority.
+   *
+   * <p>Lower values run first, higher values run later. Subscribers with the same priority may be invoked in any order.</p>
+   *
+   * <p>The default priority is {@link #DEFAULT_PRIORITY} ({@code 0}).</p>
+   *
+   * @param priority the priority
+   * @return an {@link EventConfig}
+   * @since 1.1.0
+   */
+  default EventConfig priority(final int priority) {
+    return this.order(priority);
+  }
+
+  /**
    * Gets the post order.
    *
+   * @deprecated use {@link #priority()}
    * @return the post order
    * @since 1.0.0
    */
+  @Deprecated(since = "1.1.0", forRemoval = true)
   int order();
 
   /**
    * Sets the post order.
    *
+   * @deprecated use {@link #priority(int)}
    * @param order the post order
    * @return an {@link EventConfig}
    * @since 1.0.0
    */
+  @Deprecated(since = "1.1.0", forRemoval = true)
   EventConfig order(final int order);
 
   /**
@@ -143,12 +184,29 @@ public interface EventConfig {
   @NullMarked
   interface Builder {
     /**
+     * Sets the priority.
+     *
+     * <p>Lower values run first, higher values run later. Subscribers with the same priority may be invoked in any order.</p>
+     *
+     * <p>The default priority is {@link #DEFAULT_PRIORITY} ({@code 0}).</p>
+     *
+     * @param priority the priority
+     * @return {@code this}
+     * @since 1.1.0
+     */
+    default Builder priority(final int priority) {
+      return this.order(priority);
+    }
+
+    /**
      * Sets the post order.
      *
+     * @deprecated use {@link #priority(int)}
      * @param order the post order
      * @return {@code this}
      * @since 1.0.0
      */
+    @Deprecated(since = "1.1.0", forRemoval = true)
     Builder order(final int order);
 
     /**

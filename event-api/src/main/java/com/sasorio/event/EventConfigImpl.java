@@ -19,48 +19,65 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 record EventConfigImpl(
-  int order,
+  int priority,
   boolean acceptsCancelled,
   boolean exact
 ) implements EventConfig {
-  static final EventConfigImpl DEFAULTS = new EventConfigImpl(DEFAULT_ORDER, DEFAULT_ACCEPTS_CANCELLED, DEFAULT_EXACT);
+  static final EventConfigImpl DEFAULTS = new EventConfigImpl(DEFAULT_PRIORITY, DEFAULT_ACCEPTS_CANCELLED, DEFAULT_EXACT);
 
   static EventConfigImpl create(
-    final int order,
+    final int priority,
     final boolean acceptsCancelled,
     final boolean exact
   ) {
-    if (order == DEFAULT_ORDER && acceptsCancelled == DEFAULT_ACCEPTS_CANCELLED && exact == DEFAULT_EXACT) {
+    if (priority == DEFAULT_PRIORITY && acceptsCancelled == DEFAULT_ACCEPTS_CANCELLED && exact == DEFAULT_EXACT) {
       return DEFAULTS;
     }
-    return new EventConfigImpl(order, acceptsCancelled, exact);
+    return new EventConfigImpl(priority, acceptsCancelled, exact);
+  }
+
+  @Override
+  public EventConfig priority(final int priority) {
+    return create(priority, this.acceptsCancelled, this.exact);
+  }
+
+  @Deprecated(since = "1.1.0", forRemoval = true)
+  @Override
+  public int order() {
+    return this.priority;
   }
 
   @Override
   public EventConfig order(final int order) {
-    return create(order, this.acceptsCancelled, this.exact);
+    return this.priority(order);
   }
 
   @Override
   public EventConfig acceptsCancelled(final boolean acceptsCancelled) {
-    return create(this.order, acceptsCancelled, this.exact);
+    return create(this.priority, acceptsCancelled, this.exact);
   }
 
   @Override
   public EventConfig exact(final boolean exact) {
-    return create(this.order, this.acceptsCancelled, exact);
+    return create(this.priority, this.acceptsCancelled, exact);
   }
 
   @NullMarked
   static final class BuilderImpl implements Builder {
-    private int order = DEFAULT_ORDER;
+    private int priority = DEFAULT_PRIORITY;
     private boolean acceptsCancelled = DEFAULT_ACCEPTS_CANCELLED;
     private boolean exact = DEFAULT_EXACT;
 
     @Override
-    public Builder order(final int order) {
-      this.order = order;
+    public Builder priority(final int priority) {
+      this.priority = priority;
       return this;
+    }
+
+    @Deprecated(since = "1.1.0", forRemoval = true)
+    @Override
+    public Builder order(final int order) {
+      return this.priority(order);
     }
 
     @Override
@@ -77,7 +94,7 @@ record EventConfigImpl(
 
     @Override
     public EventConfig build() {
-      return create(this.order, this.acceptsCancelled, this.exact);
+      return create(this.priority, this.acceptsCancelled, this.exact);
     }
   }
 }
