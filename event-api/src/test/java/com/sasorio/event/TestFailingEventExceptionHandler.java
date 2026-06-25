@@ -21,10 +21,20 @@ import org.jspecify.annotations.NullMarked;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @NullMarked
-public final class TestFailingEventExceptionHandler implements EventBus.EventExceptionHandler {
+public final class TestFailingEventExceptionHandler implements EventBus.ExceptionHandler {
   public static final TestFailingEventExceptionHandler INSTANCE = new TestFailingEventExceptionHandler();
 
   private TestFailingEventExceptionHandler() {
+  }
+
+  @Override
+  public <E> void eventExceptionCaught(
+    final EventBus<? super E> bus,
+    final EventConsumer<? super E> body,
+    final E event,
+    final Throwable throwable
+  ) {
+    fail("body " + body + " failed", throwable);
   }
 
   @Override
@@ -34,6 +44,6 @@ public final class TestFailingEventExceptionHandler implements EventBus.EventExc
     final E event,
     final Throwable throwable
   ) {
-    fail(subscription + " failed", throwable);
+    fail("subscription " + subscription + " failed", throwable);
   }
 }

@@ -15,9 +15,11 @@
  */
 package com.sasorio.event.bus;
 
+import com.sasorio.event.EventConsumer;
 import com.sasorio.event.EventSubscription;
 import java.util.OptionalInt;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An event bus.
@@ -34,19 +36,41 @@ public interface EventBus<E> {
    * @since 1.1.0
    */
   default void emit(final E event) {
-    this.emit(event, OptionalInt.empty());
+    this.emit(event, null);
   }
 
   /**
-   * Emits an event to all registered subscribers at the priority provided in {@code priority}.
+   * Emits an event to all registered subscribers, then invokes {@code body} after all subscribers have been notified.
+   *
+   * <p>{@code body} is always invoked regardless of whether the event was cancelled; cancellation
+   * only affects which subscribers are notified, not the body itself.</p>
    *
    * @param event the event
+   * @param body the body
+   * @since 1.1.0
+   */
+  default <T extends E> void emit(
+    final T event,
+    final @Nullable EventConsumer<? super T> body
+  ) {
+    this.emit(event, body, OptionalInt.empty());
+  }
+
+  /**
+   * Emits an event to all registered subscribers at the order provided in {@code priority}, then invokes {@code body} after all subscribers have been notified.
+   *
+   * <p>{@code body} is always invoked regardless of whether the event was cancelled; cancellation
+   * only affects which subscribers are notified, not the body itself.</p>
+   *
+   * @param event the event
+   * @param body the body
    * @param priority the priority
    * @since 1.1.0
    */
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-  default void emit(
-    final E event,
+  default <T extends E> void emit(
+    final T event,
+    final @Nullable EventConsumer<? super T> body,
     final OptionalInt priority
   ) {
     this.post(event, priority);
@@ -67,7 +91,7 @@ public interface EventBus<E> {
   /**
    * Posts an event to all registered subscribers at the priority provided in {@code priority}.
    *
-   * @deprecated use {@link #emit(Object, OptionalInt)}
+   * @deprecated use {@link #emit(Object, EventConsumer, OptionalInt)}
    * @param event the event
    * @param priority the priority
    * @since 1.0.0
@@ -82,11 +106,63 @@ public interface EventBus<E> {
   /**
    * An event exception handler.
    *
+   * @since 1.1.0
+   */
+  @NullMarked
+  interface ExceptionHandler {
+    /**
+     * Handles an exception thrown by a {@link EventConsumer body consumer} during event dispatch.
+     *
+     * @param bus the event bus
+     * @param event the event
+     * @param throwable the exception
+     * @param <E> the event type
+     * @since 1.1.0
+     */
+    <E> void eventExceptionCaught(
+      final EventBus<? super E> bus,
+      final EventConsumer<? super E> body,
+      final E event,
+      final Throwable throwable
+    );
+
+    /**
+     * Handles an exception thrown by a {@link EventSubscription subscriber} during event dispatch.
+     *
+     * @param bus the event bus
+     * @param subscription the event subscription
+     * @param event the event
+     * @param throwable the exception
+     * @param <E> the event type
+     * @since 1.1.0
+     */
+    <E> void eventExceptionCaught(
+      final EventBus<? super E> bus,
+      final EventSubscription<? super E> subscription,
+      final E event,
+      final Throwable throwable
+    );
+  }
+
+  /**
+   * An event exception handler.
+   *
+   * @deprecated use {@link ExceptionHandler}
    * @since 1.0.0
    */
+  @Deprecated(since = "1.1.0", forRemoval = true)
   @FunctionalInterface
   @NullMarked
-  interface EventExceptionHandler {
+  interface EventExceptionHandler extends ExceptionHandler {
+    @Override
+    default <E> void eventExceptionCaught(
+      final EventBus<? super E> bus,
+      final EventConsumer<? super E> body,
+      final E event,
+      final Throwable throwable
+    ) {
+    }
+
     /**
      * Handles a caught exception.
      *
@@ -97,6 +173,7 @@ public interface EventBus<E> {
      * @param <E> the event type
      * @since 1.0.0
      */
+    @Override
     <E> void eventExceptionCaught(
       final EventBus<? super E> bus,
       final EventSubscription<? super E> subscription,

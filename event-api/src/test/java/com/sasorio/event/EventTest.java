@@ -19,8 +19,13 @@ import com.sasorio.event.bus.EventBus;
 import com.sasorio.event.bus.SimpleEventBus;
 import com.sasorio.event.registry.EventRegistry;
 import com.sasorio.event.registry.SimpleEventRegistry;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.OptionalInt;
 import java.util.UUID;
+import java.util.function.Predicate;
 import org.jspecify.annotations.NullMarked;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,109 +34,326 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @NullMarked
 class EventTest {
-  private final EventRegistry<Object> registry = new SimpleEventRegistry<>(Object.class);
-  private final EventBus<Object> bus = new SimpleEventBus<>(
-    this.registry,
-    TestFailingEventExceptionHandler.INSTANCE,
-    event -> event instanceof Cancellable && ((Cancellable) event).cancelled()
-  );
+  protected final EventRegistry<Object> registry = new SimpleEventRegistry<>(Object.class);
+  protected final EventBus<Object> bus = this.createBus();
+  protected final List<String> flow = new ArrayList<>();
 
-  @Test
-  void testSubscribePostUnsubscribePost() {
-    assertFalse(this.registry.subscribed(TestEvent1.class));
-
-    final EventSubscription<TestEvent1> subscription = this.registry.subscribe(TestEvent1.class, event -> event.touches++);
-
-    assertTrue(this.registry.subscribed(TestEvent1.class));
-
-    final TestEvent1 event = new TestEvent1();
-    this.bus.emit(event);
-    assertEquals(1, event.touches);
-
-    subscription.dispose();
-
-    assertFalse(this.registry.subscribed(TestEvent1.class));
-    this.bus.emit(event);
-    assertEquals(1, event.touches);
+  protected EventBus<Object> createBus() {
+    return new SimpleEventBus<>(
+      this.registry,
+      TestFailingEventExceptionHandler.INSTANCE,
+      this.isCancelled()
+    );
   }
 
-  @Test
-  void testHierarchy() {
-    assertFalse(this.registry.subscribed(TestEvent1.class));
-    assertFalse(this.registry.subscribed(TestEvent2.class));
-
-    this.registry.subscribe(TestEvent1.class, event -> event.touches++);
-    this.registry.subscribe(TestEvent2.class, event -> event.touches++);
-
-    assertTrue(this.registry.subscribed(TestEvent1.class));
-    assertTrue(this.registry.subscribed(TestEvent2.class));
-
-    final TestEvent1 event1 = new TestEvent1();
-    this.bus.emit(event1);
-    assertEquals(1, event1.touches);
-
-    final TestEvent2 event2 = new TestEvent2();
-    this.bus.emit(event2);
-    assertEquals(2, event2.touches);
+  protected Predicate<Object> isCancelled() {
+    return event -> event instanceof Cancellable && ((Cancellable) event).cancelled();
   }
 
-  @Test
-  void testCancellable() {
-    this.registry.subscribe(TestEvent1.class, EventConfig.defaults().acceptsCancelled(false), event -> event.touches++);
-
-    final TestEvent1 event = new TestEvent1();
-    this.bus.emit(event);
-    assertEquals(1, event.touches);
-
-    event.cancelled(true);
-
-    this.bus.emit(event);
-    assertEquals(1, event.touches);
+  protected void flow(final String action) {
+    this.flow.add(action);
   }
 
-  @Test
-  void testExact() {
-    this.registry.subscribe(TestEvent1.class, EventConfig.defaults().exact(true), event -> event.touches++);
-
-    final TestEvent1 event1 = new TestEvent1();
-    this.bus.emit(event1);
-    assertEquals(1, event1.touches);
-
-    final TestEvent2 event2 = new TestEvent2();
-    this.bus.emit(event2);
-    assertEquals(0, event2.touches);
+  protected void assertFlow(final List<String> flow) {
+    assertEquals(flow, this.flow);
   }
 
-  @Test
-  void testUnsubscribeAll() {
-    assertFalse(this.registry.subscribed(TestEvent1.class));
-    this.registry.subscribe(TestEvent1.class, event -> event.touches++);
-    assertTrue(this.registry.subscribed(TestEvent1.class));
-    this.registry.unsubscribeIf(subscription -> true); // removes all subscribers
-    assertFalse(this.registry.subscribed(TestEvent1.class));
+  @Nested
+  @NullMarked
+  public class Subscription {
+    @Test
+    public void notSubscribedBeforeRegistering() {
+      assertFalse(EventTest.this.registry.subscribed(TestEvent1.class));
+    }
+
+    @Test
+    public void subscribedAfterRegistering() {
+      EventTest.this.registry.subscribe(TestEvent1.class, event -> EventTest.this.flow("touch"));
+      assertTrue(EventTest.this.registry.subscribed(TestEvent1.class));
+    }
+
+    @Test
+    public void subscriberReceivesEvent() {
+      EventTest.this.registry.subscribe(TestEvent1.class, event -> EventTest.this.flow("touch"));
+
+      final TestEvent1 event = new TestEvent1();
+      EventTest.this.bus.emit(event);
+
+      EventTest.this.assertFlow(List.of("touch"));
+    }
+
+    @Test
+    public void notSubscribedAfterDisposing() {
+      final EventSubscription<TestEvent1> subscription = EventTest.this.registry.subscribe(TestEvent1.class, event -> EventTest.this.flow("touch"));
+      subscription.dispose();
+
+      assertFalse(EventTest.this.registry.subscribed(TestEvent1.class));
+    }
+
+    @Test
+    public void disposedSubscriberDoesNotReceiveEvent() {
+      final EventSubscription<TestEvent1> subscription = EventTest.this.registry.subscribe(TestEvent1.class, event -> EventTest.this.flow("touch"));
+      subscription.dispose();
+
+      final TestEvent1 event = new TestEvent1();
+      EventTest.this.bus.emit(event);
+
+      EventTest.this.assertFlow(List.of());
+    }
   }
 
-  @Test
-  void testUnsubscribeOwnedInstances() {
-    assertFalse(this.registry.subscribed(TestEvent1.class));
+  @Nested
+  @NullMarked
+  public class Hierarchy {
+    @Test
+    public void parentSubscriberReceivesChildEvent() {
+      EventTest.this.registry.subscribe(TestEvent1.class, event -> EventTest.this.flow("touch"));
 
-    final UUID owner1 = UUID.randomUUID();
-    final UUID owner2 = UUID.randomUUID();
+      // TestEvent2 extends TestEvent1, so its subscribers should also be notified
+      final TestEvent2 event = new TestEvent2();
+      EventTest.this.bus.emit(event);
 
-    this.registry.subscribe(TestEvent1.class, new OwnedSubscriber<>(owner1, event -> event.touches++));
-    this.registry.subscribe(TestEvent1.class, new OwnedSubscriber<>(owner2, event -> event.touches++));
+      EventTest.this.assertFlow(List.of("touch"));
+    }
 
-    assertTrue(this.registry.subscribed(TestEvent1.class));
+    @Test
+    public void childSubscriberDoesNotReceiveParentEvent() {
+      EventTest.this.registry.subscribe(TestEvent2.class, event -> EventTest.this.flow("touch"));
 
-    final TestEvent1 event = new TestEvent1();
-    this.bus.emit(event);
-    assertEquals(2, event.touches);
+      final TestEvent1 event = new TestEvent1();
+      EventTest.this.bus.emit(event);
 
-    this.registry.unsubscribeIf(OwnedSubscriber.unsubscribeOwner(owner2));
+      EventTest.this.assertFlow(List.of());
+    }
 
-    assertTrue(this.registry.subscribed(TestEvent1.class));
+    @Test
+    public void bothParentAndChildSubscribersReceiveChildEvent() {
+      EventTest.this.registry.subscribe(TestEvent1.class, event -> EventTest.this.flow("parent"));
+      EventTest.this.registry.subscribe(TestEvent2.class, event -> EventTest.this.flow("child"));
 
-    this.bus.emit(event);
-    assertEquals(3, event.touches); // only 3, since one subscriber is gone
+      final TestEvent2 event = new TestEvent2();
+      EventTest.this.bus.emit(event);
+
+      EventTest.this.assertFlow(List.of("child", "parent"));
+    }
+  }
+
+  @Nested
+  @NullMarked
+  public class Exact {
+    @Test
+    public void exactSubscriberReceivesExactType() {
+      EventTest.this.registry.subscribe(TestEvent1.class, EventConfig.defaults().exact(true), event -> EventTest.this.flow("touch"));
+
+      final TestEvent1 event = new TestEvent1();
+      EventTest.this.bus.emit(event);
+
+      EventTest.this.assertFlow(List.of("touch"));
+    }
+
+    @Test
+    public void exactSubscriberDoesNotReceiveSubtype() {
+      EventTest.this.registry.subscribe(TestEvent1.class, EventConfig.defaults().exact(true), event -> EventTest.this.flow("touch"));
+
+      final TestEvent2 event = new TestEvent2();
+      EventTest.this.bus.emit(event);
+
+      EventTest.this.assertFlow(List.of());
+    }
+  }
+
+  @Nested
+  @NullMarked
+  public class Cancellation {
+    @Test
+    public void nonCancellingSubscriberReceivesUncancelledEvent() {
+      EventTest.this.registry.subscribe(TestEvent1.class, EventConfig.defaults().acceptsCancelled(false), event -> EventTest.this.flow("touch"));
+
+      final TestEvent1 event = new TestEvent1();
+      EventTest.this.bus.emit(event);
+
+      EventTest.this.assertFlow(List.of("touch"));
+    }
+
+    @Test
+    public void nonCancellingSubscriberSkipsCancelledEvent() {
+      EventTest.this.registry.subscribe(TestEvent1.class, EventConfig.defaults().acceptsCancelled(false), event -> EventTest.this.flow("touch"));
+
+      final TestEvent1 event = new TestEvent1();
+      event.cancelled(true);
+      EventTest.this.bus.emit(event);
+
+      EventTest.this.assertFlow(List.of());
+    }
+  }
+
+  @Nested
+  @NullMarked
+  public class Body {
+    @Test
+    public void bodyIsInvokedWhenNoSubscribersAreRegistered() {
+      final TestEvent1 event = new TestEvent1();
+      EventTest.this.bus.emit(event, e -> EventTest.this.flow("body"));
+
+      EventTest.this.assertFlow(List.of("body"));
+    }
+
+    @Test
+    public void bodyIsInvokedAfterSubscribers() {
+      EventTest.this.registry.subscribe(TestEvent1.class, event -> EventTest.this.flow("subscriber"));
+
+      final TestEvent1 event = new TestEvent1();
+      EventTest.this.bus.emit(event, e -> EventTest.this.flow("body"));
+
+      EventTest.this.assertFlow(List.of("subscriber", "body"));
+    }
+
+    @Test
+    public void bodyIsInvokedEvenWhenEventIsCancelled() {
+      // The body always runs regardless of cancellation; cancellation only affects subscribers
+      EventTest.this.registry.subscribe(TestEvent1.class, EventConfig.defaults().acceptsCancelled(false), event -> EventTest.this.flow("touch"));
+
+      final TestEvent1 event = new TestEvent1();
+      event.cancelled(true);
+      EventTest.this.bus.emit(event, e -> EventTest.this.flow("body"));
+
+      EventTest.this.assertFlow(List.of("body"));
+    }
+
+    @Test
+    public void nullBodyIsNoOp() {
+      EventTest.this.registry.subscribe(TestEvent1.class, event -> EventTest.this.flow("touch"));
+
+      final TestEvent1 event = new TestEvent1();
+      EventTest.this.bus.emit(event, (EventConsumer<? super TestEvent1>) null);
+
+      EventTest.this.assertFlow(List.of("touch"));
+    }
+  }
+
+  @Nested
+  @NullMarked
+  public class UnsubscribeAll {
+    @Test
+    public void unsubscribeIfRemovesAllMatchingSubscriptions() {
+      EventTest.this.registry.subscribe(TestEvent1.class, event -> EventTest.this.flow("touch"));
+      EventTest.this.registry.subscribe(TestEvent1.class, event -> EventTest.this.flow("touch"));
+      EventTest.this.registry.unsubscribeIf(subscription -> true);
+
+      assertFalse(EventTest.this.registry.subscribed(TestEvent1.class));
+    }
+
+    @Test
+    public void removedSubscribersDoNotReceiveEvents() {
+      EventTest.this.registry.subscribe(TestEvent1.class, event -> EventTest.this.flow("touch"));
+      EventTest.this.registry.unsubscribeIf(subscription -> true);
+
+      final TestEvent1 event = new TestEvent1();
+      EventTest.this.bus.emit(event);
+
+      EventTest.this.assertFlow(List.of());
+    }
+  }
+
+  @Nested
+  @NullMarked
+  public class OwnerUnsubscribe {
+    @Test
+    public void onlyTargetOwnerIsUnsubscribed() {
+      final UUID owner1 = UUID.randomUUID();
+      final UUID owner2 = UUID.randomUUID();
+
+      EventTest.this.registry.subscribe(TestEvent1.class, new OwnedSubscriber<>(owner1, event -> EventTest.this.flow("owner1")));
+      EventTest.this.registry.subscribe(TestEvent1.class, new OwnedSubscriber<>(owner2, event -> EventTest.this.flow("owner2")));
+
+      EventTest.this.registry.unsubscribeIf(OwnedSubscriber.unsubscribeOwner(owner2));
+
+      final TestEvent1 event = new TestEvent1();
+      EventTest.this.bus.emit(event);
+
+      EventTest.this.assertFlow(List.of("owner1"));
+    }
+
+    @Test
+    public void remainingOwnerIsStillSubscribed() {
+      final UUID owner1 = UUID.randomUUID();
+      final UUID owner2 = UUID.randomUUID();
+
+      EventTest.this.registry.subscribe(TestEvent1.class, new OwnedSubscriber<>(owner1, event -> EventTest.this.flow("owner1")));
+      EventTest.this.registry.subscribe(TestEvent1.class, new OwnedSubscriber<>(owner2, event -> EventTest.this.flow("owner2")));
+
+      EventTest.this.registry.unsubscribeIf(OwnedSubscriber.unsubscribeOwner(owner2));
+
+      assertTrue(EventTest.this.registry.subscribed(TestEvent1.class));
+    }
+
+    @Test
+    public void removingAllOwnersLeavesNoSubscriptions() {
+      final UUID owner1 = UUID.randomUUID();
+      final UUID owner2 = UUID.randomUUID();
+
+      EventTest.this.registry.subscribe(TestEvent1.class, new OwnedSubscriber<>(owner1, event -> EventTest.this.flow("owner1")));
+      EventTest.this.registry.subscribe(TestEvent1.class, new OwnedSubscriber<>(owner2, event -> EventTest.this.flow("owner2")));
+
+      EventTest.this.registry.unsubscribeIf(OwnedSubscriber.unsubscribeOwner(owner1));
+      EventTest.this.registry.unsubscribeIf(OwnedSubscriber.unsubscribeOwner(owner2));
+
+      assertFalse(EventTest.this.registry.subscribed(TestEvent1.class));
+    }
+  }
+
+  @Nested
+  @NullMarked
+  public class Priority {
+    @Test
+    public void lowerPrioritySubscriberIsCalledFirst() {
+      EventTest.this.registry.subscribe(TestEvent1.class, EventConfig.defaults().priority(10), event -> EventTest.this.flow("1"));
+      EventTest.this.registry.subscribe(TestEvent1.class, EventConfig.defaults().priority(20), event -> EventTest.this.flow("2"));
+
+      EventTest.this.bus.emit(new TestEvent1());
+
+      EventTest.this.assertFlow(List.of("1", "2"));
+    }
+
+    @Test
+    public void subscribersWithSamePriorityAreCalledInRegistrationOrder() {
+      EventTest.this.registry.subscribe(TestEvent1.class, EventConfig.defaults().priority(10), event -> EventTest.this.flow("1"));
+      EventTest.this.registry.subscribe(TestEvent1.class, EventConfig.defaults().priority(10), event -> EventTest.this.flow("2"));
+      EventTest.this.registry.subscribe(TestEvent1.class, EventConfig.defaults().priority(10), event -> EventTest.this.flow("3"));
+
+      EventTest.this.bus.emit(new TestEvent1());
+
+      EventTest.this.assertFlow(List.of("1", "2", "3"));
+    }
+
+    @Test
+    public void emitWithPriorityFilterOnlyNotifiesMatchingSubscribers() {
+      EventTest.this.registry.subscribe(TestEvent1.class, EventConfig.defaults().priority(10), event -> EventTest.this.flow("1"));
+      EventTest.this.registry.subscribe(TestEvent1.class, EventConfig.defaults().priority(20), event -> EventTest.this.flow("2"));
+
+      EventTest.this.bus.emit(new TestEvent1(), null, OptionalInt.of(10));
+
+      EventTest.this.assertFlow(List.of("1"));
+    }
+
+    @Test
+    public void bodyIsCalledAfterAllPrioritizedSubscribers() {
+      EventTest.this.registry.subscribe(TestEvent1.class, EventConfig.defaults().priority(10), event -> EventTest.this.flow("low"));
+      EventTest.this.registry.subscribe(TestEvent1.class, EventConfig.defaults().priority(20), event -> EventTest.this.flow("high"));
+
+      EventTest.this.bus.emit(new TestEvent1(), e -> EventTest.this.flow("body"));
+
+      EventTest.this.assertFlow(List.of("low", "high", "body"));
+    }
+
+    @Test
+    public void bodyIsCalledAfterPriorityFilteredSubscribers() {
+      EventTest.this.registry.subscribe(TestEvent1.class, EventConfig.defaults().priority(10), event -> EventTest.this.flow("low"));
+      EventTest.this.registry.subscribe(TestEvent1.class, EventConfig.defaults().priority(20), event -> EventTest.this.flow("high"));
+
+      EventTest.this.bus.emit(new TestEvent1(), e -> EventTest.this.flow("body"), OptionalInt.of(10));
+
+      EventTest.this.assertFlow(List.of("low", "body"));
+    }
   }
 }

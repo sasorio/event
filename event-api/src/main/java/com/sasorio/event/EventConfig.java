@@ -15,6 +15,7 @@
  */
 package com.sasorio.event;
 
+import java.util.function.IntSupplier;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 
@@ -122,6 +123,23 @@ public interface EventConfig {
   }
 
   /**
+   * Sets the priority.
+   *
+   * <p>The {@link IntSupplier} is invoked once; its result is cached.</p>
+   *
+   * <p>Lower values run first, higher values run later. Subscribers with the same priority may be invoked in any order.</p>
+   *
+   * <p>The default priority is {@link #DEFAULT_PRIORITY} ({@code 0}).</p>
+   *
+   * @param priority the priority
+   * @return {@code this}
+   * @since 1.1.0
+   */
+  default EventConfig priority(final IntSupplier priority) {
+    return this.priority(priority.getAsInt());
+  }
+
+  /**
    * Gets the post order.
    *
    * @deprecated use {@link #priority()}
@@ -196,6 +214,23 @@ public interface EventConfig {
      */
     default Builder priority(final int priority) {
       return this.order(priority);
+    }
+
+    /**
+     * Sets the priority.
+     *
+     * <p>The {@link IntSupplier} is invoked once; its result is cached.</p>
+     *
+     * <p>Lower values run first, higher values run later. Subscribers with the same priority may be invoked in any order.</p>
+     *
+     * <p>The default priority is {@link #DEFAULT_PRIORITY} ({@code 0}).</p>
+     *
+     * @param priority the priority
+     * @return {@code this}
+     * @since 1.1.0
+     */
+    default Builder priority(final IntSupplier priority) {
+      return this.priority(priority.getAsInt());
     }
 
     /**

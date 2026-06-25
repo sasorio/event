@@ -17,12 +17,14 @@ package com.sasorio.event.bus;
 
 import com.sasorio.event.Cancellable;
 import com.sasorio.event.EventConfig;
+import com.sasorio.event.EventConsumer;
 import com.sasorio.event.EventSubscription;
 import com.sasorio.event.registry.EventRegistry;
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.function.Predicate;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import static java.util.Objects.requireNonNull;
 
@@ -36,13 +38,13 @@ import static java.util.Objects.requireNonNull;
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class SimpleEventBus<E> implements EventBus<E> {
   protected final EventRegistry<E> registry;
-  protected final EventExceptionHandler exceptions;
+  protected final ExceptionHandler exceptions;
   protected final Predicate<E> cancelled;
 
   /**
    * Constructs a new {@code SimpleEventBus}.
    *
-   * @deprecated use {@link #SimpleEventBus(EventRegistry, EventExceptionHandler, Predicate)}
+   * @deprecated use {@link #SimpleEventBus(EventRegistry, ExceptionHandler, Predicate)}
    * @param registry the event registry
    * @param exceptions the event exception handler
    * @since 1.0.0
@@ -65,7 +67,7 @@ public class SimpleEventBus<E> implements EventBus<E> {
    */
   public SimpleEventBus(
     final EventRegistry<E> registry,
-    final EventExceptionHandler exceptions,
+    final ExceptionHandler exceptions,
     final Predicate<E> cancelled
   ) {
     this.registry = requireNonNull(registry, "registry");
@@ -74,23 +76,45 @@ public class SimpleEventBus<E> implements EventBus<E> {
   }
 
   @Override
-  public void emit(
-    final E event,
+  public <T extends E> void emit(
+    final T event,
+    final @Nullable EventConsumer<? super T> body,
     final OptionalInt priority
   ) {
     @SuppressWarnings("unchecked")
     final Class<? extends E> type = (Class<? extends E>) event.getClass();
     final List<EventSubscription<? super E>> subscriptions = this.registry.subscriptions(type);
-    if (subscriptions.isEmpty()) {
-      return;
-    }
-    for (final EventSubscription<? super E> subscription : subscriptions) {
-      if (this.accepts(subscription, event, priority)) {
-        try {
-          subscription.subscriber().on(event);
-        } catch (final Throwable t) {
-          this.exceptions.eventExceptionCaught(this, subscription, event, t);
+    this.dispatch(event, body, priority, subscriptions);
+  }
+
+  protected <T extends E> void dispatch(
+    final T event,
+    final @Nullable EventConsumer<? super T> body,
+    final OptionalInt priority,
+    final List<EventSubscription<? super E>> subscriptions
+  ) {
+    if (!subscriptions.isEmpty()) {
+      for (final EventSubscription<? super E> subscription : subscriptions) {
+        if (this.accepts(subscription, event, priority)) {
+          try {
+            subscription.subscriber().on(event);
+          } catch (final Throwable t) {
+            this.exceptions.eventExceptionCaught(this, subscription, event, t);
+          }
         }
+      }
+    }
+
+    // The body is always dispatched after subscribers, regardless of whether any matched.
+    this.dispatchBody(event, body);
+  }
+
+  protected <T extends E> void dispatchBody(final T event, final @Nullable EventConsumer<? super T> body) {
+    if (body != null) {
+      try {
+        body.on(event);
+      } catch (final Throwable t) {
+        this.exceptions.eventExceptionCaught(this, body, event, t);
       }
     }
   }
@@ -101,7 +125,7 @@ public class SimpleEventBus<E> implements EventBus<E> {
     final E event,
     final OptionalInt priority
   ) {
-    this.emit(event, priority);
+    this.emit(event, null, priority);
   }
 
   @SuppressWarnings("RedundantIfStatement")

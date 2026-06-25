@@ -19,5 +19,4 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public class TestEvent1 extends AbstractCancellable {
-  public int touches;
 }
