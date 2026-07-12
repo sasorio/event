@@ -1,3 +1,18 @@
+/*
+ * Copyright 2021 Sasorio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.sasorio.event;
 
 import com.sasorio.event.registry.EventRegistry;
@@ -19,12 +34,12 @@ class EventRegistryTests {
   void testSubscribe() {
     assertThrows(NullPointerException.class, () -> new SimpleEventRegistry<>(null));
 
-    EventRegistry<SimpleEvent> registry = new SimpleEventRegistry<>(SimpleEvent.class);
+    final EventRegistry<SimpleEvent> registry = new SimpleEventRegistry<>(SimpleEvent.class);
     assertEquals(SimpleEvent.class, registry.type());
     assertFalse(registry.subscribed(SimpleEvent.class));
     assertFalse(registry.subscribed(ExtendedEvent.class));
 
-    EventSubscription<?> subscription = registry.subscribe(SimpleEvent.class, new SimpleSubscriber<>());
+    final EventSubscription<?> subscription = registry.subscribe(SimpleEvent.class, new SimpleSubscriber<>());
     assertTrue(registry.subscribed(SimpleEvent.class));
     assertTrue(registry.subscribed(ExtendedEvent.class));
 
@@ -43,35 +58,35 @@ class EventRegistryTests {
 
   @Test
   void testUnsubscribe() {
-    EventRegistry<SimpleEvent> registry = new SimpleEventRegistry<>(SimpleEvent.class);
+    final EventRegistry<SimpleEvent> registry = new SimpleEventRegistry<>(SimpleEvent.class);
 
-    SimpleSubscriber<SimpleEvent> subscriber1 = new SimpleSubscriber<>();
-    SimpleSubscriber<SimpleEvent> subscriber2 = new SimpleSubscriber<>();
+    final SimpleSubscriber<SimpleEvent> subscriber1 = new SimpleSubscriber<>();
+    final SimpleSubscriber<SimpleEvent> subscriber2 = new SimpleSubscriber<>();
 
     registry.subscribe(SimpleEvent.class, subscriber1);
     assertTrue(registry.subscribed(SimpleEvent.class));
 
-    registry.unsubscribeIf((sub) -> true);
+    registry.unsubscribeIf(sub -> true);
     assertFalse(registry.subscribed(SimpleEvent.class));
 
     registry.subscribe(SimpleEvent.class, subscriber1);
     assertTrue(registry.subscribed(SimpleEvent.class));
     subscriber1.unregisterMe = true;
-    registry.unsubscribeIf((sub) -> sub.subscriber() instanceof SimpleSubscriber<?> simple && simple.unregisterMe);
+    registry.unsubscribeIf(sub -> sub.subscriber() instanceof SimpleSubscriber<?> simple && simple.unregisterMe);
 
     registry.subscribe(SimpleEvent.class, subscriber1);
     registry.subscribe(SimpleEvent.class, subscriber2);
     assertTrue(registry.subscribed(SimpleEvent.class));
-    registry.unsubscribeIf((sub) -> sub.subscriber() instanceof SimpleSubscriber<?> simple && simple.unregisterMe);
+    registry.unsubscribeIf(sub -> sub.subscriber() instanceof SimpleSubscriber<?> simple && simple.unregisterMe);
     assertTrue(registry.subscribed(SimpleEvent.class));
 
-    registry.unsubscribeIf((sub) -> false);
+    registry.unsubscribeIf(sub -> false);
     assertTrue(registry.subscribed(SimpleEvent.class));
   }
 
   @Test
   void testAncestry() {
-    EventRegistry<SimpleEvent> registry = new SimpleEventRegistry<>(SimpleEvent.class);
+    final EventRegistry<SimpleEvent> registry = new SimpleEventRegistry<>(SimpleEvent.class);
     registry.subscribe(NonBaseEvent.class, new SimpleSubscriber<>());
     assertFalse(registry.subscribed(SimpleEvent.class));
     assertTrue(registry.subscribed(NonBaseEvent.class));
@@ -82,9 +97,9 @@ class EventRegistryTests {
   @Test
   void runToString() {
     // This is really just to get the last 8% line coverage.
-    EventRegistry<SimpleEvent> registry = new SimpleEventRegistry<>(SimpleEvent.class);
-    EventSubscription<?> subscription = registry.subscribe(SimpleEvent.class, new SimpleSubscriber<>());
-    String ignored = subscription.toString();
+    final EventRegistry<SimpleEvent> registry = new SimpleEventRegistry<>(SimpleEvent.class);
+    final EventSubscription<?> subscription = registry.subscribe(SimpleEvent.class, new SimpleSubscriber<>());
+    final String ignored = subscription.toString();
   }
 
   private interface SimpleEvent {
@@ -96,17 +111,17 @@ class EventRegistryTests {
   private static class NonBaseEvent implements SimpleEvent, BetterSimpleEvent {
   }
 
-  private static class ExtendedEvent extends NonBaseEvent {
+  private static final class ExtendedEvent extends NonBaseEvent {
   }
 
-  private static class AnotherEvent implements SimpleEvent {
+  private static final class AnotherEvent implements SimpleEvent {
   }
 
-  private static class SimpleSubscriber<E extends SimpleEvent> implements EventSubscriber<E> {
+  private static final class SimpleSubscriber<E extends SimpleEvent> implements EventSubscriber<E> {
     public boolean unregisterMe = false;
 
     @Override
-    public void on(E event) {
+    public void on(final E event) {
       // ...
     }
   }

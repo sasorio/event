@@ -1,16 +1,30 @@
+/*
+ * Copyright 2021 Sasorio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.sasorio.event;
 
 import com.sasorio.event.bus.EventBus;
 import com.sasorio.event.bus.SimpleEventBus;
 import com.sasorio.event.registry.EventRegistry;
 import com.sasorio.event.registry.SimpleEventRegistry;
-import org.jspecify.annotations.NullMarked;
-import org.junit.jupiter.api.Test;
-
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalInt;
+import org.jspecify.annotations.NullMarked;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -22,9 +36,9 @@ class EventBusTests {
 
   @Test
   void testEmit() {
-    EventRegistry<Event> registry = new SimpleEventRegistry<>(Event.class);
-    EventBus<Event> bus = new SimpleEventBus<>(registry, new ExceptionHandler(), e -> e.cancelled);
-    EventConfig config = EventConfig.defaults().acceptsCancelled(false);
+    final EventRegistry<Event> registry = new SimpleEventRegistry<>(Event.class);
+    final EventBus<Event> bus = new SimpleEventBus<>(registry, new ExceptionHandler(), e -> e.cancelled);
+    final EventConfig config = EventConfig.defaults().acceptsCancelled(false);
 
     Event event = new Event();
     bus.emit(event);
@@ -77,8 +91,8 @@ class EventBusTests {
 
   @Test
   void testEmitWithPriority() {
-    EventRegistry<Event> registry = new SimpleEventRegistry<>(Event.class);
-    EventBus<Event> bus = new SimpleEventBus<>(registry, new ExceptionHandler(), e -> false);
+    final EventRegistry<Event> registry = new SimpleEventRegistry<>(Event.class);
+    final EventBus<Event> bus = new SimpleEventBus<>(registry, new ExceptionHandler(), e -> false);
     registry.subscribe(Event.class, EventConfig.defaults().priority(20), new EventHandler(""));
 
     Event event = new Event();
@@ -95,16 +109,16 @@ class EventBusTests {
 
   @Test
   void testEmitWithExact() {
-    EventRegistry<Event> registry = new SimpleEventRegistry<>(Event.class);
-    EventBus<Event> bus = new SimpleEventBus<>(registry, new ExceptionHandler(), e -> false);
+    final EventRegistry<Event> registry = new SimpleEventRegistry<>(Event.class);
+    final EventBus<Event> bus = new SimpleEventBus<>(registry, new ExceptionHandler(), e -> false);
     registry.subscribe(Event.class, new EventHandler("Default"));
     registry.subscribe(Event.class, EventConfig.defaults().exact(true), new EventHandler("Exact"));
 
-    Event event = new Event();
+    final Event event = new Event();
     bus.emit(event);
     assertEquals(2, event.handledBy.size());
 
-    SubEvent subEvent = new SubEvent();
+    final SubEvent subEvent = new SubEvent();
     bus.emit(subEvent);
     assertEquals(1, subEvent.handledBy.size());
     assertEquals("Default", subEvent.handledBy.get(0).name());
@@ -115,42 +129,42 @@ class EventBusTests {
     public List<EventHandler> handledBy = new ArrayList<>();
   }
 
-  private static class SubEvent extends Event {
+  private static final class SubEvent extends Event {
   }
 
   private record EventHandler(String name, boolean cancelIt, boolean throwIt) implements EventSubscriber<Event> {
-    EventHandler(String name) {
+    EventHandler(final String name) {
       this(name, false, false);
     }
 
     @Override
-    public void on(Event event) throws Throwable {
+    public void on(final Event event) throws Throwable {
       event.handledBy.add(this);
-      if (cancelIt) {
+      if (this.cancelIt) {
         event.cancelled = true;
       }
-      if (throwIt) {
+      if (this.throwIt) {
         throw new IllegalStateException();
       }
     }
   }
 
-  private static class ExceptionHandler implements EventBus.EventExceptionHandler {
+  private static final class ExceptionHandler implements EventBus.EventExceptionHandler {
     @Override
     public <E> void eventExceptionCaught(
-      EventBus<? super E> bus,
-      EventSubscription<? super E> subscription,
-      E event,
-      Throwable throwable
+      final EventBus<? super E> bus,
+      final EventSubscription<? super E> subscription,
+      final E event,
+      final Throwable throwable
     ) {
       throw new TestThrewExceptionException(throwable);
     }
   }
 
-  private static class TestThrewExceptionException extends RuntimeException {
+  private static final class TestThrewExceptionException extends RuntimeException {
     private static final @Serial long serialVersionUID = 236237843L;
 
-    public TestThrewExceptionException(Throwable cause) {
+    TestThrewExceptionException(final Throwable cause) {
       super(cause);
     }
   }

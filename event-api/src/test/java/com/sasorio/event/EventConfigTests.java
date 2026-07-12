@@ -1,3 +1,18 @@
+/*
+ * Copyright 2021 Sasorio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.sasorio.event;
 
 import org.junit.jupiter.api.Test;
@@ -14,7 +29,7 @@ class EventConfigTests {
 
   @Test
   void testDefaults() {
-    EventConfig config = EventConfig.defaults();
+    final EventConfig config = EventConfig.defaults();
     assertEquals(EventConfig.DEFAULT_PRIORITY, config.priority());
     assertEquals(EventConfig.DEFAULT_ORDER, config.order());
     assertEquals(EventConfig.DEFAULT_ACCEPTS_CANCELLED, config.acceptsCancelled());
@@ -26,29 +41,29 @@ class EventConfigTests {
 
   @Test
   void testValueSetters() {
-    EventConfig config = EventConfig.defaults();
+    final EventConfig config = EventConfig.defaults();
 
-    int newPriority = EventConfig.DEFAULT_PRIORITY + 125;
-    EventConfig priorityConfig = config.priority(newPriority);
+    final int newPriority = EventConfig.DEFAULT_PRIORITY + 125;
+    final EventConfig priorityConfig = config.priority(newPriority);
     assertEquals(newPriority, priorityConfig.priority());
     assertNotEquals(config, priorityConfig);
     assertNotSame(config, priorityConfig);
 
-    int newOrder = EventConfig.DEFAULT_ORDER - 125;
-    EventConfig orderConfig = config.order(newOrder);
+    final int newOrder = EventConfig.DEFAULT_ORDER - 125;
+    final EventConfig orderConfig = config.order(newOrder);
     assertEquals(newOrder, orderConfig.order());
     assertEquals(newOrder, orderConfig.priority());
     assertNotEquals(config, orderConfig);
     assertNotSame(config, orderConfig);
 
-    boolean newAcceptsCancelled = !EventConfig.DEFAULT_ACCEPTS_CANCELLED;
-    EventConfig acceptsCancelledConfig = config.acceptsCancelled(newAcceptsCancelled);
+    final boolean newAcceptsCancelled = !EventConfig.DEFAULT_ACCEPTS_CANCELLED;
+    final EventConfig acceptsCancelledConfig = config.acceptsCancelled(newAcceptsCancelled);
     assertEquals(newAcceptsCancelled, acceptsCancelledConfig.acceptsCancelled());
     assertNotEquals(config, acceptsCancelledConfig);
     assertNotSame(config, acceptsCancelledConfig);
 
-    boolean newExact = !EventConfig.DEFAULT_EXACT;
-    EventConfig exactConfig = config.exact(newExact);
+    final boolean newExact = !EventConfig.DEFAULT_EXACT;
+    final EventConfig exactConfig = config.exact(newExact);
     assertEquals(newExact, exactConfig.acceptsCancelled());
     assertNotEquals(config, exactConfig);
     assertNotSame(config, exactConfig);
@@ -56,13 +71,13 @@ class EventConfigTests {
 
   @Test
   void testCreate() {
-    EventConfig created = EventConfig.of(65, false, true);
+    final EventConfig created = EventConfig.of(65, false, true);
     assertNotSame(EventConfig.defaults(), created);
     assertEquals(65, created.priority());
     assertFalse(created.acceptsCancelled());
     assertTrue(created.exact());
 
-    EventConfig sameAsDefault = EventConfig.of(
+    final EventConfig sameAsDefault = EventConfig.of(
       EventConfig.DEFAULT_PRIORITY,
       EventConfig.DEFAULT_ACCEPTS_CANCELLED,
       EventConfig.DEFAULT_EXACT
@@ -72,13 +87,13 @@ class EventConfigTests {
 
   @Test
   void testBuilder() {
-    EventConfig.Builder builder = EventConfig.builder();
+    final EventConfig.Builder builder = EventConfig.builder();
     assertSame(EventConfig.defaults(), builder.build());
 
     builder.priority(100);
     builder.acceptsCancelled(false);
     builder.exact(true);
-    EventConfig built = builder.build();
+    final EventConfig built = builder.build();
     assertEquals(built, EventConfig.of(100, false, true));
 
     builder.order(200);
