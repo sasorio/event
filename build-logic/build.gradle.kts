@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-  implementation("com.diffplug.spotless:spotless-plugin-gradle:8.7.0")
+  implementation("com.diffplug.spotless:spotless-plugin-gradle:8.10.2")
   implementation("net.kyori:indra-common:4.0.0")
   implementation("net.kyori:indra-git:4.0.0")
   implementation("net.kyori:indra-publishing-sonatype:4.0.0")
